@@ -8,6 +8,7 @@
 #include "device_config.h"
 #include "firmware.h"
 #include "telemetry_core.h"
+#include "prototype_preview.h"
 
 using namespace nobanjir;
 
@@ -21,6 +22,10 @@ uint32_t lastPingMs = 0;
 double pings[5] = {};
 size_t pingCount = 0;
 bool measuring = false;
+constexpr PrototypeCalibration prototypeCalibration{
+  config::kPrototypeSensorToZeroCm, config::kPrototypeMaxWaterHeightCm,
+  config::kPrototypeWaspadaMinCm, config::kPrototypeSiagaMinCm, config::kPrototypeBahayaMinCm
+};
 
 bool clockValid(time_t epoch) {
   // A broad sanity range, not a substitute for SNTP or certificate validation.
@@ -47,6 +52,15 @@ void publish(Distance distance, bool criticalEvent) {
   // This is an actual local sensor observation; it does not imply backend receipt.
   if (payload.ok) Serial.printf("[sensor] %s\n", payload.text);
   else Serial.println("[sensor] invalid device identity; payload not generated");
+  if (config::kPrototypeSerialPreviewEnabled) {
+    const auto preview = previewPrototypeWater(distance, prototypeCalibration);
+    if (preview.valid) {
+      Serial.printf("[prototype] source=LOCAL_PREVIEW distance_cm=%.1f water_height_cm=%.1f level=%s\n",
+                    distance.cm, preview.waterHeightCm, prototypeLevelName(preview.level));
+    } else {
+      Serial.println("[prototype] source=LOCAL_PREVIEW water_height_cm=null level=UNKNOWN reason=INVALID_OR_OUTSIDE_CONTAINER");
+    }
+  }
 }
 
 Snapshot copySnapshot(uint32_t now) {
@@ -219,6 +233,12 @@ void nobanjirDeviceSetup() {
   if (config::kFloatEnabled) pinMode(config::kFloatPin, INPUT_PULLUP);
   lastCycleMs = millis();
   Serial.println("NO BANJIR! / local sensor measurements / not a flood-level decision");
+  if (config::kPrototypeSerialPreviewEnabled) {
+    Serial.printf("[prototype] LOCAL DEMO: sensor_to_zero_cm=%.1f container_height_cm=%.1f thresholds_cm=%.1f/%.1f/%.1f\n",
+                  config::kPrototypeSensorToZeroCm, config::kPrototypeMaxWaterHeightCm,
+                  config::kPrototypeWaspadaMinCm, config::kPrototypeSiagaMinCm,
+                  config::kPrototypeBahayaMinCm);
+  }
   if (networkConfigured()) {
     // ESP32-WROOM-32 has two cores. Task stack size is in bytes on ESP-IDF.
     if (xTaskCreatePinnedToCore(networkTask, "telemetry", 12288, nullptr, 1, nullptr, 0) != pdPASS)

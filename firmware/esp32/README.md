@@ -2,12 +2,13 @@
 
 Panduan ini untuk **ESP32-WROOM-32 development board 30 pin Type-C**, JSN-SR04T
 beserta probe/modul, dan rain sensor beserta pelat/modul. Upload utama memakai
-**Arduino IDE**. Belum ada backend yang disediakan pada tahap ini; sensor bisa
-langsung diuji melalui Serial Monitor tanpa Wi-Fi atau token.
+**Arduino IDE**. Sensor bisa langsung diuji melalui Serial Monitor tanpa Wi-Fi
+atau token. Integrasi backend dijelaskan di [panduan telemetri](../../docs/telemetry-setup.md).
 
-Firmware membaca jarak permukaan air dan kondisi hujan. Tinggi air dan tingkat
-Normal/Waspada/Siaga/Bahaya akan dihitung oleh backend sesuai kalibrasi lokasi.
-Tidak ada angka ambang keselamatan yang ditanam di firmware.
+Firmware membaca jarak permukaan air dan kondisi hujan. Serial Monitor juga
+menampilkan tinggi air dan level **preview prototipe lokal** untuk kontainer
+20 cm. Angka ini adalah ambang demonstrasi; tingkat peringatan untuk data web
+tetap dihitung backend dari kalibrasi perangkat yang terdaftar.
 
 ## 1. Komponen dan sambungan
 
@@ -158,6 +159,47 @@ Backend nantinya menghitung `water_height_cm = sensor_to_zero_cm - distance_cm`.
 Ukur tinggi pemasangan terhadap titik nol lokasi dan simpan kalibrasinya di
 backend. Jangan menyalin contoh ambang demo sebagai ambang keselamatan lapangan.
 
+### Prototipe kontainer 20 cm dan tiang 30 cm di atas bibir
+
+Preview lokal sudah aktif melalui `kPrototypeSerialPreviewEnabled = true` di
+`NoBanjir/device_config.h`. Ukuran acuan adalah **muka probe ke dasar kontainer**,
+bukan ujung tiang. Nilai awalnya `kPrototypeSensorToZeroCm = 50.0`, tinggi
+kontainer `20.0`, dan ambang Waspada/Siaga/Bahaya `5.0/10.0/15.0` cm.
+
+| Jarak probe ke air | Tinggi air dari dasar | Level preview |
+| --- | --- | --- |
+| 50 cm | 0 cm | NORMAL |
+| 45 cm | 5 cm | WASPADA |
+| 40 cm | 10 cm | SIAGA |
+| 35 cm | 15 cm | BAHAYA |
+| 30 cm | 20 cm | BAHAYA |
+
+Setelah upload ulang, buka Serial Monitor **115200 baud**. Contoh saat jarak
+terukur 40 cm:
+
+```text
+[prototype] source=LOCAL_PREVIEW distance_cm=40.0 water_height_cm=10.0 level=SIAGA
+```
+
+Jika hasil ukur probe-ke-dasar sebenarnya 48 cm, ubah
+`kPrototypeSensorToZeroCm = 48.0`, lalu upload ulang. Jarak tidak valid atau hasil
+konversi di luar 0–20 cm ditandai `water_height_cm=null level=UNKNOWN`; periksa
+kalibrasi, pantulan dinding, dan posisi probe. Angka tidak dipaksa menjadi nol.
+`kMinDistanceCm` tetap 25 cm; pada susunan 50 cm ini air penuh masih berjarak
+30 cm dari probe.
+
+Tidak perlu `secrets.h` untuk preview ini. Jika nanti menghubungkannya ke web,
+gunakan preset [`device-config.prototype.json`](../../scripts/device-config.prototype.json)
+setelah menyesuaikan hasil pengukuran sebenarnya. Dari root proyek:
+
+```powershell
+npm.cmd run device -- provision --config scripts/device-config.prototype.json
+```
+
+Perintah tersebut mendaftarkan perangkat dan menyimpan token di folder lokal
+`provisioned-devices/`. Jalankan hanya sekali untuk kode perangkat yang sama.
+Setelah itu isi `secrets.h` sesuai bagian berikut dan gunakan URL HTTPS aplikasi.
+
 ## 4. Float switch opsional
 
 Komponen ini belum ada pada daftar Anda, sehingga **dinonaktifkan secara
@@ -179,14 +221,46 @@ Bahaya harus tetap dilakukan server berdasarkan input kritis yang valid.
 
 1. Salin **`NoBanjir/secrets.example.h`** menjadi **`NoBanjir/secrets.h`**.
    Ini file lokal yang dikecualikan oleh `.gitignore`. Jangan membagikannya.
-2. Isi SSID/password Wi-Fi **2,4 GHz**, `kDeviceCode`, URL lengkap
-   `https://HOST/api/iot/readings`, dan token khusus perangkat tersebut.
-3. Isi `kRootCa` dengan sertifikat **root CA PEM** yang dipercaya untuk host Anda,
-   dari penerbit sertifikat yang tepercaya. Jangan mengambil sertifikat melalui
-   koneksi yang tidak diverifikasi. Saat CA host berubah, konfigurasi firmware
-   mungkin perlu diperbarui.
-4. Set `kUploadEnabled = true`, Verify, dan upload ulang. Template dengan CA
-   placeholder atau data yang belum lengkap tetap memakai mode lokal.
+2. Buka `secrets.h` di Arduino IDE, lalu isi semua nilai ini:
+
+   | Field | Isi dengan | Sumbernya |
+   | --- | --- | --- |
+   | `kWifiSsid` | Nama jaringan Wi-Fi **2,4 GHz** | Router/hotspot sekolah |
+   | `kWifiPassword` | Kata sandi jaringan tersebut | Pengelola jaringan sekolah |
+   | `kDeviceCode` | Kode perangkat yang sudah didaftarkan, misalnya `ESP32-NB-001` | Konfigurasi perangkat saat provisioning; harus sama persis |
+   | `kIngestUrl` | URL HTTPS lengkap yang berakhir `/api/iot/readings` | Domain aplikasi Next.js yang sudah di-deploy, bukan URL Supabase atau `localhost` |
+   | `kDeviceToken` | Token khusus untuk kode perangkat tersebut | File rahasia yang dibuat skrip provisioning `npm run device -- provision --config device-config.json` |
+   | `kRootCa` | Sertifikat root CA lengkap dalam format PEM | Penerbit sertifikat resmi yang menandatangani HTTPS domain aplikasi |
+
+3. Pada `kRootCa`, pertahankan baris `BEGIN CERTIFICATE` dan `END CERTIFICATE`,
+   lalu ganti teks placeholder dengan isi PEM lengkap. Jangan menyalin sertifikat
+   acak, private key, atau mematikan verifikasi TLS. Jika penyedia hosting
+   mengganti rantai sertifikat ke root CA lain, perbarui nilai ini.
+4. Pastikan `kDeviceCode` cocok dengan konfigurasi hasil provisioning dan token
+   berasal dari perangkat yang sama. Jangan gunakan Supabase publishable key,
+   service role key, database password, atau kata sandi Wi-Fi sebagai token.
+5. Setelah semua nilai benar, set `kUploadEnabled = true`, klik **Verify**, lalu
+   **Upload** ulang. Bila ada field kosong atau CA masih placeholder, firmware
+   tetap di mode lokal dan tidak mengirim telemetri.
+
+Contoh bentuk file setelah diisi (nilai di bawah hanya penanda, bukan
+kredensial yang dapat dipakai):
+
+```cpp
+namespace credentials {
+constexpr bool kUploadEnabled = true;
+constexpr const char* kWifiSsid = "NAMA_WIFI_2_4_GHZ";
+constexpr const char* kWifiPassword = "KATA_SANDI_WIFI";
+constexpr const char* kDeviceCode = "ESP32-NB-001";
+constexpr const char* kIngestUrl = "https://app-sekolah.example/api/iot/readings";
+constexpr const char* kDeviceToken = "TOKEN_HASIL_PROVISIONING";
+constexpr const char* kRootCa = R"PEM(
+-----BEGIN CERTIFICATE-----
+ISI_ROOT_CA_PEM_LENGKAP
+-----END CERTIFICATE-----
+)PEM";
+}
+```
 
 **Jangan memasukkan Supabase service role key atau key publik Supabase sebagai
 token perangkat.** Endpoint server akan memeriksa token khusus yang terikat pada

@@ -14,6 +14,22 @@ constexpr bool kFloatActiveLow = true;
 // Starting values only: check the installed JSN revision and mounting geometry.
 constexpr double kMinDistanceCm = 25.0;
 constexpr double kMaxDistanceCm = 450.0;
+
+// Demonstration: 20 cm container, probe face 30 cm above its rim.
+// Measure the actual probe-to-bottom distance and adjust kPrototypeSensorToZeroCm.
+constexpr bool kPrototypeSerialPreviewEnabled = true;
+constexpr double kPrototypeSensorToZeroCm = 50.0;
+constexpr double kPrototypeMaxWaterHeightCm = 20.0;
+constexpr double kPrototypeWaspadaMinCm = 5.0;
+constexpr double kPrototypeSiagaMinCm = 10.0;
+constexpr double kPrototypeBahayaMinCm = 15.0;
+static_assert(!kPrototypeSerialPreviewEnabled ||
+  (kPrototypeSensorToZeroCm <= kMaxDistanceCm &&
+   kPrototypeSensorToZeroCm - kPrototypeMaxWaterHeightCm >= kMinDistanceCm &&
+   kPrototypeWaspadaMinCm >= 0 && kPrototypeWaspadaMinCm < kPrototypeSiagaMinCm &&
+   kPrototypeSiagaMinCm < kPrototypeBahayaMinCm &&
+   kPrototypeBahayaMinCm <= kPrototypeMaxWaterHeightCm),
+  "Prototype thresholds must be ordered and stay outside the sensor blind zone");
 constexpr uint32_t kEchoTimeoutUs = 30000;
 constexpr uint32_t kPingSpacingMs = 75;
 constexpr uint32_t kSampleIntervalMs = 5000;

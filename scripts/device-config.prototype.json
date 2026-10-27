@@ -1,0 +1,14 @@
+{
+  "device_code": "ESP32-NB-001",
+  "name": "Prototipe Kontainer 20 cm",
+  "location_description": "Kontainer demonstrasi: muka probe 30 cm di atas bibir, 50 cm dari dasar",
+  "sensor_to_zero_cm": 50,
+  "min_distance_cm": 25,
+  "max_distance_cm": 450,
+  "max_water_height_cm": 20,
+  "waspada_min_cm": 5,
+  "siaga_min_cm": 10,
+  "bahaya_min_cm": 15,
+  "offline_after_seconds": 90,
+  "min_ingest_interval_seconds": 1
+}

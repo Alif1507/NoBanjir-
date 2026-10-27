@@ -58,6 +58,8 @@ session. It is not part of sign-up. Replace `admin` with `officer` for staff.
   submission, owner history, and authorized detail.
 - `/petugas/laporan`: staff queue and status transitions.
 - `/admin/perangkat`: device calibration and thresholds.
+- `/petugas`: officer/admin overview of recent reports and an active sensor.
+- `/admin`: admin overview with a direct path to device settings.
 - `/tingkat-kondisi`, `/tentang`: condition guide and project information.
 
 Report photos live in the private `report-photos` bucket. The server checks

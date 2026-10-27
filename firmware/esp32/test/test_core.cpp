@@ -1,4 +1,5 @@
 #include "telemetry_core.h"
+#include "prototype_preview.h"
 #include <limits>
 
 using namespace nobanjir;
@@ -135,5 +136,37 @@ constexpr bool newerCriticalSurvivesAck() {
   return mailbox.next(200, 10000).measuredEpoch == 1002;
 }
 static_assert(newerCriticalSurvivesAck(), "old HTTP acknowledgement cannot clear newer event");
+
+constexpr PrototypeCalibration container{50.0, 20.0, 5.0, 10.0, 15.0};
+static_assert(previewPrototypeWater({true, 50.0}, container).waterHeightCm == 0,
+              "empty container has zero water height");
+static_assert(previewPrototypeWater({true, 45.1}, container).level == PrototypeLevel::Normal,
+              "water just below 5 cm stays Normal");
+static_assert(previewPrototypeWater({true, 45.0}, container).level == PrototypeLevel::Waspada,
+              "5 cm starts Waspada");
+static_assert(previewPrototypeWater({true, 40.1}, container).level == PrototypeLevel::Waspada,
+              "water just below 10 cm stays Waspada");
+static_assert(previewPrototypeWater({true, 40.0}, container).level == PrototypeLevel::Siaga,
+              "10 cm starts Siaga");
+static_assert(previewPrototypeWater({true, 35.1}, container).level == PrototypeLevel::Siaga,
+              "water just below 15 cm stays Siaga");
+static_assert(previewPrototypeWater({true, 35.0}, container).level == PrototypeLevel::Bahaya,
+              "15 cm starts Bahaya");
+static_assert(previewPrototypeWater({true, 30.0}, container).waterHeightCm == 20 &&
+              previewPrototypeWater({true, 30.0}, container).level == PrototypeLevel::Bahaya,
+              "full container is 20 cm and Bahaya");
+static_assert(!previewPrototypeWater({true, 50.1}, container).valid,
+              "a reading below the container bottom is not clamped to Normal");
+static_assert(!previewPrototypeWater({true, 29.9}, container).valid,
+              "a reading above the container rim is outside calibration");
+static_assert(previewPrototypeWater({false, 40.0}, container).level == PrototypeLevel::Unknown,
+              "invalid distance never becomes a known level");
+static_assert(!previewPrototypeWater({true, std::numeric_limits<double>::quiet_NaN()}, container).valid &&
+              !previewPrototypeWater({true, std::numeric_limits<double>::infinity()}, container).valid,
+              "nonfinite sensor readings are rejected");
+static_assert(!previewPrototypeWater({true, 40.0}, {50, 20, 15, 10, 5}).valid,
+              "unordered thresholds are rejected");
+static_assert(equalText(prototypeLevelName(PrototypeLevel::Unknown), "UNKNOWN"),
+              "unknown preview has an explicit label");
 
 int main() { return 0; }

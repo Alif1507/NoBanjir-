@@ -205,6 +205,12 @@ Setelah itu isi `secrets.h` sesuai bagian berikut dan gunakan URL HTTPS aplikasi
 Komponen ini belum ada pada daftar Anda, sehingga **dinonaktifkan secara
 default** dan JSON berisi `float_switch_critical: null`.
 
+Untuk prototipe saat ini, biarkan `kFloatEnabled = false` dan GPIO26 tidak perlu
+disambungkan. Level air memakai hasil JSN-SR04T; ambang demo Bahaya dimulai pada
+tinggi air 15 cm. Rain sensor memberi informasi hujan secara terpisah. Nilai
+`float_switch_critical: null` berarti komponen tidak tersedia dan merupakan
+payload yang valid untuk backend.
+
 Untuk float switch berupa **kontak kering dua kabel**, sambungkan satu kabel ke
 GPIO26 dan satu kabel ke GND, lalu set `kFloatEnabled = true`. Firmware memakai
 `INPUT_PULLUP`. Uji posisi kontak saat air kritis dan sesuaikan

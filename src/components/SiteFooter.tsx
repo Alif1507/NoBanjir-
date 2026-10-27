@@ -1,9 +1,9 @@
 import Link from "next/link";
+import { mainNavigation } from "../lib/navigation.ts";
 
 export function SiteFooter({ variant = "public" }: { variant?: "public" | "dashboard" }) {
-  const navigation = variant === "dashboard"
-    ? [["Kondisi", "/dashboard#kondisi"], ["Laporan", "/dashboard#laporan"], ["Status Air", "/dashboard#status-air"]]
-    : [["Beranda", "/"], ["Laporan", "/#laporan"], ["Tentang", "/#tentang"], ["Cara Kerja", "/#cara-kerja"]];
+  const navigation = [...mainNavigation.map(link => [link.label, link.href]),
+    variant === "dashboard" ? ["Kondisi saat ini", "/dashboard#kondisi"] : ["Cara kerja", "/#cara-kerja"]];
   return <footer className="site-footer"><div className="footer-inner">
     <div className="footer-grid">
       <div><h2>Navigasi</h2>{navigation.map(([label,href]) => <Link key={label} href={href}>{label}</Link>)}</div>

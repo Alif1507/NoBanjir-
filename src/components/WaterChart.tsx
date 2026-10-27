@@ -15,7 +15,7 @@ export function WaterChart({ points, range, onRangeChange, demo }:
   const coords = valid.map((point,index) => ({ x: 35 + (valid.length < 2 ? 0 : index * 930 / (valid.length - 1)),
     y: height - 20 - point.water_height_cm / max * 215 }));
   const line = coords.map(point => `${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(" ");
-  return <section className="water-chart content-width" aria-labelledby="chart-title">
+  return <section id="grafik" className="water-chart content-width" aria-labelledby="chart-title">
     <div className="chart-head"><h2 id="chart-title">Grafik</h2><div className="chart-ranges" role="group" aria-label="Rentang waktu">
       {ranges.map(([value,label]) => <button type="button" key={value} className={range === value ? "selected" : ""}
         aria-pressed={range === value} onClick={() => onRangeChange(value)}>{label}</button>)}</div></div>
@@ -24,7 +24,7 @@ export function WaterChart({ points, range, onRangeChange, demo }:
       {[0,.25,.5,.75,1].map(fraction => <g key={fraction}><line x1="35" x2="965" y1={height-20-fraction*215}
         y2={height-20-fraction*215} stroke="#414141" strokeDasharray="4 7"/>
         <text x="2" y={height-16-fraction*215} fill="#aeb8bf" fontSize="17">{Math.round(max*fraction)}</text></g>)}
-      <polyline points={line} fill="none" stroke="#57f6fe" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/>
+      <polyline key={range} className="chart-trace" pathLength="1" points={line} fill="none" stroke="#57f6fe" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/>
       {coords.length === 1 && <circle cx={coords[0].x} cy={coords[0].y} r="7" fill="#57f6fe"/>}
       </svg></div><div className="chart-axis"><span>{timeLabel(valid[0].received_at)}</span><span>{timeLabel(valid.at(-1)!.received_at)} WIB</span></div></>
       : <p className="chart-empty">Grafik<span>Belum ada pembacaan pada rentang ini.</span></p>}

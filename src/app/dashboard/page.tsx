@@ -140,12 +140,16 @@ export default function DashboardPage() {
   return (
     <>
       <SiteHeader variant="dashboard" />
-      <main className="dashboard-main">
+      <main id="main-content" tabIndex={-1} className="dashboard-main">
         <section
           id="kondisi"
           className="conditions content-width"
           aria-labelledby="condition-title"
         >
+          <nav className="page-section-links" aria-label="Bagian pemantauan">
+            <a href="#kondisi">Kondisi saat ini</a><a href="#grafik">Grafik air</a>
+            <a href="#laporan">Buat laporan</a><a href="#status-air">Panduan level</a>
+          </nav>
           <div className="condition-top">
             <div>
               <h1 id="condition-title">Kondisi Sekolah Saat Ini</h1>
@@ -282,6 +286,7 @@ export default function DashboardPage() {
                 >
                   {level && (
                     <Image
+                      key={level}
                       src={statusIcons[level]}
                       alt=""
                       width={96}
@@ -293,7 +298,7 @@ export default function DashboardPage() {
                 </span>
                 <h2>Status Saat Ini</h2>
               </div>
-              <p className="current-title" aria-live="polite">
+              <p key={statusTitle} className="current-title" aria-live="polite">
                 {statusTitle}
               </p>
               <p className="current-copy">{statusText}</p>

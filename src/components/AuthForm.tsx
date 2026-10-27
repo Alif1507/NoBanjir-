@@ -39,10 +39,11 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
     } catch { setError(mode === "login" ? "Email atau kata sandi tidak cocok." : "Pendaftaran gagal. Periksa email atau coba lagi."); }
     finally { setBusy(false); }
   }
-  return <main className="auth-layout">
+  return <main id="main-content" tabIndex={-1} className="auth-layout">
     <div className="auth-photo"><AuthToggle active={mode}/><div className="auth-photo-copy">
       <Link href="/">No Banjir!</Link><p>Teknologi untuk<br/>Mengatasi Banjir</p></div></div>
     <section className="auth-side"><form className="auth-form" onSubmit={submit} noValidate>
+      <Link className="auth-back-link" href="/">← Kembali ke beranda</Link>
       <h1>{mode === "login" ? "Masuk" : "Daftar"}</h1>
       <p className="auth-subtitle">{mode === "login" ? "Masuk untuk mengakses layanan." : "Buat akun untuk mengakses layanan."}</p>
       {mode === "register" && <label>Nama<input value={name} onChange={event => setName(event.target.value)}

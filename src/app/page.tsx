@@ -15,7 +15,7 @@ const features = [
 const steps = ["Deteksi Ketinggian Air", "Proses Data", "Pengiriman Data", "Pemantauan dan Peringatan"];
 
 export default function Home() {
-  return <><SiteHeader/><main className="landing-main">
+  return <><SiteHeader/><main id="main-content" tabIndex={-1} className="landing-main">
     <section className="landing-hero" aria-labelledby="hero-title">
       <div className="hero-panel"><AuthToggle active="login"/>
         <div className="hero-copy"><h1 id="hero-title">MARI <span className="hero-outline">WUJUDKAN</span><br/>SEKOLAH NYAMAN.</h1>

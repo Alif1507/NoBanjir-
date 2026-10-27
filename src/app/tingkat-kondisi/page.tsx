@@ -25,7 +25,7 @@ const guide = [
     level: "Bahaya",
     tone: "bahaya",
     meaning:
-      "Ketinggian air mencapai ambang kritis atau sensor pelampung kritis aktif.",
+      "Ketinggian air mencapai atau melewati ambang Bahaya yang dikalibrasi untuk titik sensor.",
     action: "Segera ikuti prosedur keselamatan sekolah dan arahan petugas.",
   },
 ];

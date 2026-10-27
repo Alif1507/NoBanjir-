@@ -7,7 +7,7 @@ constexpr uint8_t kTrigPin = 18;
 constexpr uint8_t kEchoPin = 19;
 constexpr uint8_t kRainPin = 27;
 constexpr bool kRainActiveLow = true;  // Verify with a wet/dry plate.
-constexpr bool kFloatEnabled = false;
+constexpr bool kFloatEnabled = false;  // This prototype has no float switch; leave disabled.
 constexpr uint8_t kFloatPin = 26;
 constexpr bool kFloatActiveLow = true;
 

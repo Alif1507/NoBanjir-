@@ -1,0 +1,14 @@
+{
+  "device_code": "ESP32-NB-001",
+  "name": "ISI_NAMA_TITIK",
+  "location_description": "ISI_LOKASI_TITIK",
+  "sensor_to_zero_cm": null,
+  "min_distance_cm": null,
+  "max_distance_cm": null,
+  "max_water_height_cm": null,
+  "waspada_min_cm": null,
+  "siaga_min_cm": null,
+  "bahaya_min_cm": null,
+  "offline_after_seconds": 90,
+  "min_ingest_interval_seconds": 1
+}

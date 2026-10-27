@@ -1,0 +1,11 @@
+# NO BANJIR! full web app design
+
+The existing telemetry API and cloud tables remain the source of truth for live sensor data. The four PDF layouts in `context/` define the composition of `/`, `/login`, `/register`, and `/dashboard`. Photos embedded in those PDFs are extracted as unchanged assets. Other routes use the same typography, color, header, and footer without crowding the four reference screens.
+
+Public visitors can browse the landing page, live dashboard, risk guide, sanitized reports, and about page. A clearly marked demo mode is selected explicitly in the browser and never writes to telemetry tables. Login and registration use Supabase Auth. Authenticated reporters submit reports, see their own reports, and optionally upload one photo to a private bucket. Officers and admins may change report status; admins may edit sensor calibration and thresholds. Database RLS enforces these roles independently of UI checks.
+
+The backend adds profiles, reports, report status history, an RLS-safe public reports view, and a private Storage bucket. A trigger creates a reporter profile for each Auth user. Roles cannot be self-promoted; an existing project owner assigns officer/admin through a privileged SQL operation. Server endpoints verify bearer access tokens against Supabase Auth before writes, then use the secret key for constrained operations. Client and server never expose device credentials. The existing IoT ingest RPC remains unchanged.
+
+Images from the PDF source are used as the school, feature, aerial, and report photos. No placeholder risk level is presented as live status. The visual source shows a register CTA labeled “Masuk”; the actual registration action uses “Daftar” for clarity, while the toggle and composition remain faithful. Auth uses email despite the mockup's “Nama” login field, with helper text to make the input meaning clear.
+
+Verification: pure validation and demo logic tests, rollback-only SQL tests for RLS and reports, server API tests where feasible, Next typecheck/build, and desktop/mobile screenshots if dependencies become available. Package installation is currently blocked by host network permissions; the implementation should remain buildable once npm access is restored.

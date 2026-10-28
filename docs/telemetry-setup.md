@@ -131,8 +131,11 @@ Request pada `POST /api/iot/readings` mengirim `device_code`, `distance_cm`,
 `is_raining`, `float_switch_critical`, dan `measured_at` opsional. Jarak gagal
 boleh `null`. Server memeriksa token, menolak paket di atas 2 KiB, menghitung
 tinggi/level dari kalibrasi server, membatasi interval per perangkat, dan
-menyimpan waktu penerimaan UTC. Float switch kritis tetap memicu Bahaya walau
-jarak ultrasonic gagal.
+menyimpan waktu penerimaan UTC. Prototipe saat ini tidak memakai float switch;
+firmware mengirim `float_switch_critical: null`, yang diterima backend. Level
+Bahaya dihitung dari tinggi air JSN-SR04T dan ambang perangkat. Jika float switch
+ditambahkan dan diaktifkan di kemudian hari, input kritisnya juga dapat memicu
+Bahaya walau jarak ultrasonic gagal.
 
 ## 5. Lihat data
 
@@ -170,6 +173,9 @@ empat level risiko banjir.
 6. Putus Wi-Fi; setelah batas waktu dashboard menunjukkan Offline dan tidak
    menyebut kondisi air aman.
 
-Koneksi cloud telemetri dan uji SQL sudah dijalankan. Provisioning perangkat,
-pengujian ESP32 fisik, dan deployment HTTPS aplikasi masih menunggu kalibrasi
-serta alamat deployment dari lokasi pemasangan.
+Koneksi cloud telemetri dan uji SQL sudah dijalankan. Perangkat prototipe
+`ESP32-NB-001` sudah terdaftar dengan referensi 50 cm dan ambang demonstrasi
+5/10/15 cm. URL aplikasi adalah `https://nobanjirtandaseru.vercel.app`;
+`secrets.h` lokal sudah disiapkan untuk endpoint HTTPS tersebut. Pengiriman
+fisik ESP32 masih perlu dikonfirmasi. Ikuti
+[langkah koneksi prototipe ke Vercel](esp32-vercel-connection.md).

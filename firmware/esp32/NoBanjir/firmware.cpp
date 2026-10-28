@@ -49,6 +49,13 @@ void publish(Distance distance, bool criticalEvent) {
     measuredAt = timestamp;
   }
   const auto payload = buildPayload(reading, credentials::kDeviceCode, measuredAt);
+  if (config::kRainDebugEnabled) {
+    const int rawRain = digitalRead(config::kRainPin);
+    Serial.printf("[rain] gpio=%u raw=%s active_low=%s debounced=%s\n",
+                  static_cast<unsigned>(config::kRainPin), rawRain == LOW ? "LOW" : "HIGH",
+                  config::kRainActiveLow ? "true" : "false",
+                  !reading.rain.known ? "UNKNOWN" : reading.rain.value ? "WET" : "DRY");
+  }
   // This is an actual local sensor observation; it does not imply backend receipt.
   if (payload.ok) Serial.printf("[sensor] %s\n", payload.text);
   else Serial.println("[sensor] invalid device identity; payload not generated");
@@ -233,6 +240,10 @@ void nobanjirDeviceSetup() {
   if (config::kFloatEnabled) pinMode(config::kFloatPin, INPUT_PULLUP);
   lastCycleMs = millis();
   Serial.println("NO BANJIR! / local sensor measurements / not a flood-level decision");
+  if (config::kRainDebugEnabled) {
+    Serial.printf("[rain] connect module DO to GPIO%u; %s means wet after debounce\n",
+                  static_cast<unsigned>(config::kRainPin), config::kRainActiveLow ? "LOW" : "HIGH");
+  }
   if (config::kPrototypeSerialPreviewEnabled) {
     Serial.printf("[prototype] LOCAL DEMO: sensor_to_zero_cm=%.1f container_height_cm=%.1f thresholds_cm=%.1f/%.1f/%.1f\n",
                   config::kPrototypeSensorToZeroCm, config::kPrototypeMaxWaterHeightCm,

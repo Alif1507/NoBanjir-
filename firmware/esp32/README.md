@@ -155,6 +155,33 @@ DO membedakan kedua kondisi dengan stabil. Jika hasilnya terbalik, ubah
 **kabel DO terlepas dapat terlihat sebagai kondisi kering** pada konfigurasi
 active-low. Sistem ini belum bisa mendeteksi kerusakan kabel rain secara mandiri.
 
+Jika pelat basah tetapi `is_raining` tetap `false`, aktifkan
+`kRainDebugEnabled = true` (sudah aktif), upload ulang, lalu amati baris `[rain]`
+di Serial Monitor 115200. Baris ini muncul bersama pembacaan sensor sekitar
+setiap 5 detik. Uji pelat kering, kemudian teteskan air sampai menjembatani
+beberapa jalur logam pada pelat; basahi pelatnya saja.
+
+Contoh yang sesuai konfigurasi `kRainActiveLow = true`:
+
+```text
+[rain] gpio=27 raw=HIGH active_low=true debounced=DRY
+[rain] gpio=27 raw=LOW active_low=true debounced=WET
+```
+
+| Hasil saat kering dan basah | Langkah berikutnya |
+| --- | --- |
+| `HIGH` saat kering, `LOW` saat basah | Polaritas sudah sesuai. Setelah sinyal stabil 150 ms, pembacaan berikutnya harus `is_raining=true`. |
+| `LOW` saat kering, `HIGH` saat basah | Ubah `kRainActiveLow = false`, lalu upload ulang. |
+| Selalu `HIGH` | Periksa kabel **DO/D0 ke GPIO27**, GND bersama, konektor pelat, dan setelan potensiometer. AO/A0 tidak digunakan. |
+| Selalu `LOW` | Periksa apakah pelat masih basah atau ambang potensiometer terlalu sensitif. |
+| Nilai sering berubah saat kondisi tetap | Atur potensiometer agar keluaran DO stabil, lalu periksa sambungan dan catu modul. |
+
+Jika modul memiliki LED indikator keluaran DO, bandingkan perubahannya saat
+kering/basah; LED daya saja tidak menunjukkan pendeteksian hujan. Putar
+potensiometer sedikit demi sedikit sampai keluaran DO membedakan pelat kering
+dan basah, lalu ulangi kedua kondisi. Setelah selesai diagnosis,
+`kRainDebugEnabled` boleh diubah ke `false` untuk menyembunyikan log tambahan.
+
 Backend nantinya menghitung `water_height_cm = sensor_to_zero_cm - distance_cm`.
 Ukur tinggi pemasangan terhadap titik nol lokasi dan simpan kalibrasinya di
 backend. Jangan menyalin contoh ambang demo sebagai ambang keselamatan lapangan.

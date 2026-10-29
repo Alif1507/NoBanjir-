@@ -12,15 +12,15 @@ constexpr bool kFloatEnabled = false;  // This prototype has no float switch; le
 constexpr uint8_t kFloatPin = 26;
 constexpr bool kFloatActiveLow = true;
 
-// Starting values only: check the installed JSN revision and mounting geometry.
-constexpr double kMinDistanceCm = 25.0;
-constexpr double kMaxDistanceCm = 450.0;
+// HC-SR04 nominal range; verify readings against the actual mounting geometry.
+constexpr double kMinDistanceCm = 2.0;
+constexpr double kMaxDistanceCm = 400.0;
 
-// Demonstration: 20 cm container, probe face 30 cm above its rim.
+// Demonstration: probe face 20 cm above the bottom; keep 2 cm clear of water.
 // Measure the actual probe-to-bottom distance and adjust kPrototypeSensorToZeroCm.
 constexpr bool kPrototypeSerialPreviewEnabled = true;
-constexpr double kPrototypeSensorToZeroCm = 50.0;
-constexpr double kPrototypeMaxWaterHeightCm = 20.0;
+constexpr double kPrototypeSensorToZeroCm = 20.0;
+constexpr double kPrototypeMaxWaterHeightCm = 18.0;
 constexpr double kPrototypeWaspadaMinCm = 5.0;
 constexpr double kPrototypeSiagaMinCm = 10.0;
 constexpr double kPrototypeBahayaMinCm = 15.0;

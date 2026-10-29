@@ -1,7 +1,7 @@
 # Firmware ESP32 — NO BANJIR!
 
-Panduan ini untuk **ESP32-WROOM-32 development board 30 pin Type-C**, JSN-SR04T
-beserta probe/modul, dan rain sensor beserta pelat/modul. Upload utama memakai
+Panduan ini untuk **ESP32-WROOM-32 development board 30 pin Type-C**, HC-SR04
+5 V, dan rain sensor beserta pelat/modul. Upload utama memakai
 **Arduino IDE**. Sensor bisa langsung diuji melalui Serial Monitor tanpa Wi-Fi
 atau token. Integrasi backend dijelaskan di [panduan telemetri](../../docs/telemetry-setup.md).
 
@@ -10,11 +10,29 @@ menampilkan tinggi air dan level **preview prototipe lokal** untuk kontainer
 20 cm. Angka ini adalah ambang demonstrasi; tingkat peringatan untuk data web
 tetap dihitung backend dari kalibrasi perangkat yang terdaftar.
 
+## Konfigurasi prototipe saat ini
+
+- Sensor ultrasonik **HC-SR04**, menggantikan JSN-SR04T.
+- Muka sensor **20 cm dari dasar kontainer**; tinggi air terpantau **0–18 cm**.
+- Ambang tinggi air: **Normal 0–<5**, **Waspada 5–<10**, **Siaga 10–<15**,
+  dan **Bahaya 15–18 cm**.
+- Rain sensor memakai **DO → GPIO27**; float switch tidak dipasang.
+- Perangkat cloud: `ESP32-NB-001`. Jangan provision ulang perangkat ini.
+- Endpoint: `https://nobanjirtandaseru.vercel.app/api/iot/readings`.
+- Dashboard: <https://nobanjirtandaseru.vercel.app/dashboard> tanpa `?demo=1`.
+- HTTPS memakai **GTS Root R1** untuk rantai Google Trust Services WR1 yang
+  dikonfirmasi pada sertifikat deployment saat penyiapan.
+
+Untuk perangkat yang sudah dikonfigurasi, buka `NoBanjir/NoBanjir.ino`, upload
+ulang melalui Arduino IDE, lalu buka Serial Monitor **115200 baud**. Pertahankan
+`secrets.h` yang sudah diisi; jangan menimpanya dengan file contoh. Target log
+upload adalah `[https] result=201`.
+
 ## 1. Komponen dan sambungan
 
 Siapkan board, sensor, kabel USB **data**, kabel jumper, breadboard/terminal, dan
-**lima resistor 1 kΩ ¼ W** untuk pembagi tegangan Echo. Jika yang tersedia baru
-satu resistor, tambahkan empat resistor dengan nilai yang sama sebelum merangkai
+**tiga resistor 1 kΩ ¼ W** untuk pembagi tegangan Echo. Jika yang tersedia baru
+satu resistor, tambahkan dua resistor dengan nilai yang sama sebelum merangkai
 Echo. Multimeter diperlukan untuk memeriksa tegangan jalur dan keluaran modul.
 
 Jumlah pin dan konektor Type-C tidak menentukan urutan header. Gunakan **label
@@ -27,45 +45,46 @@ langsung ke GPIO.
 
 | Komponen | Pin modul | Sambungan |
 | --- | --- | --- |
-| JSN-SR04T | VCC | 5 V teratur, dari pin 5V/VIN **yang sudah diverifikasi** |
-| JSN-SR04T | GND | GND ESP32 |
-| JSN-SR04T | TRIG / RX | GPIO18, untuk mode trigger/echo yang sesuai modul |
-| JSN-SR04T | ECHO / TX | Titik tengah pembagi tegangan → GPIO19 |
-   | Rain module | VCC | 3V3, **jika varian modul mendukung suplai 3,3 V** |
-   | Rain module | GND | GND ESP32 |
-   | Rain module | DO / D0 | GPIO27 setelah memastikan level keluarannya aman |
-   | Rain module | AO / A0 | Tidak disambungkan |
-   | Rain plate | Dua terminal pelat | Dua terminal pelat pada rain module |
-| JSN probe | Konektor probe | Konektor probe pada JSN module |
+| HC-SR04 | VCC | 5 V teratur, dari pin 5V/VIN **yang sudah diverifikasi** |
+| HC-SR04 | GND | GND ESP32 |
+| HC-SR04 | TRIG | GPIO18 |
+| HC-SR04 | ECHO | Titik tengah pembagi tegangan → GPIO19 |
+| Rain module | VCC | 3V3, **jika varian modul mendukung suplai 3,3 V** |
+| Rain module | GND | GND ESP32 |
+| Rain module | DO / D0 | GPIO27 setelah memastikan level keluarannya aman |
+| Rain module | AO / A0 | Tidak disambungkan |
+| Rain plate | Dua terminal pelat | Dua terminal pelat pada rain module |
+| Float switch | Tidak dipasang | GPIO26 dibiarkan kosong |
 
-**Pembagi tegangan Echo dengan lima resistor 1 kΩ:**
+**Pembagi tegangan Echo dengan tiga resistor 1 kΩ:**
 
 ```text
-JSN ECHO ----[1k]----[1k]----+---------- GPIO19 ESP32
-                            |
-                           [1k]
-                            |
-                           [1k]
-                            |
-                           [1k]
-                            |
-                           GND -------- GND ESP32 / GND JSN
+HC-SR04 ECHO ----[1k]----+---------- GPIO19 ESP32
+                       |
+                      [1k]
+                       |
+                      [1k]
+                       |
+                      GND -------- GND ESP32 / GND HC-SR04 / GND rain module
 ```
 
-Dua resistor di atas titik GPIO membentuk 2 kΩ; tiga resistor ke ground
-membentuk 3 kΩ. Untuk Echo HIGH 5 V, nilai nominal di GPIO adalah
-`5 × 3 / (2 + 3) = 3 V`. **Satu resistor seri saja tidak membentuk pembagi
+Satu resistor dari ECHO ke titik GPIO membentuk 1 kΩ; dua resistor **seri** dari
+titik GPIO ke ground membentuk 2 kΩ. Untuk Echo HIGH 5 V, nilai nominal di GPIO
+adalah `5 × 2 / (1 + 2) ≈ 3,33 V`. **Satu resistor seri saja tidak membentuk pembagi
 tegangan.** Jangan menukar kelompok atas dan bawah. Periksa nilai resistor,
 kontinuitas, dan tegangan sinyal sebelum menyambungkannya ke ESP32. Multimeter
 biasa bisa menampilkan rata-rata pulsa Echo, sehingga angka rendah pada meter
 tidak membuktikan amplitudo puncak sinyal sudah aman; gunakan alat ukur yang
 sesuai untuk memeriksa pulsa bila dibutuhkan.
 
-Varian JSN-SR04T berbeda dapat memiliki tegangan kerja, mode, blind zone, dan
-ambang TRIG berbeda. Firmware ini memerlukan **mode trigger/echo**, bukan mode
-UART otomatis. Jika TRIG 3,3 V tidak memenuhi spesifikasi modul, gunakan level
-shifter yang sesuai untuk arah ESP32 → TRIG. Pembagi resistor di atas hanya untuk
-arah ECHO → ESP32.
+HC-SR04 menggunakan suplai 5 V dan pulsa TRIG 10 us. Firmware memberi jeda
+75 ms antar ping. Jaga sensor tetap kering dan menghadap tegak lurus ke air.
+
+Alternatif dengan lima resistor 1 kΩ: **dua seri** dari ECHO ke titik GPIO19,
+lalu **tiga seri** dari titik GPIO19 ke GND, menghasilkan nominal 3 V.
+Jangan memakai satu resistor di atas dan empat seri di bawah (hasilnya 4 V),
+atau empat paralel di bawah (hasilnya 1 V). Pin 5V/VIN memberi daya sensor;
+pin GPIO ESP32 tetap memakai logika 3,3 V dan tidak menerima ECHO 5 V langsung.
 
 Suplai rain module dengan 3,3 V hanya setelah memeriksa spesifikasi variannya.
 Kalau modul wajib 5 V, gunakan konversi level yang sesuai pada DO; jangan
@@ -108,7 +127,7 @@ Contoh output **ilustrasi**, bukan pengukuran alat Anda:
 
 ```text
 [https] disabled or incomplete config; Serial-only bench mode
-[sensor] {"device_code":"ESP32-NB-001","distance_cm":38.0,"is_raining":false,"float_switch_critical":null}
+[sensor] {"device_code":"ESP32-NB-001","distance_cm":10.0,"is_raining":false,"float_switch_critical":null}
 ```
 
 `[sensor]` berarti pembacaan lokal, bukan bukti data diterima server. Tanpa jam
@@ -124,7 +143,7 @@ Pengaturan ada di **`NoBanjir/device_config.h`**.
 | `kTrigPin` / `kEchoPin` | 18 / 19 | Jalur ultrasonic |
 | `kRainPin` | 27 | Masukan digital rain module |
 | `kRainActiveLow` | `true` | LOW dianggap hujan; verifikasi modul |
-| `kMinDistanceCm` / `kMaxDistanceCm` | 25 / 450 cm | Batas penerimaan awal, sesuaikan varian |
+| `kMinDistanceCm` / `kMaxDistanceCm` | 2 / 400 cm | Batas penerimaan awal, sesuaikan varian |
 | `kSampleIntervalMs` | 5000 | Mulai satu siklus pengukuran setiap sekitar 5 detik |
 | `kPingSpacingMs` | 75 | Jarak waktu antar pemicu ping |
 | `kEchoTimeoutUs` | 30000 | Batas waktu menunggu satu Echo |
@@ -144,9 +163,9 @@ desimal sebagai jaminan akurasi fisik.
 
 Pasang probe menghadap permukaan air, jauh dari dinding/penghalang pantulan.
 Pastikan permukaan air tertinggi tetap di luar blind zone modul yang sebenarnya.
-Nilai 25 cm adalah batas awal konservatif, bukan hasil pengujian modul Anda.
+HC-SR04 memiliki rentang nominal 2-400 cm; verifikasi dengan penggaris.
 Titik yang berada dalam blind zone tidak bisa dipantau dengan andal oleh sensor
-ini. Bagian probe mungkin tahan air; PCB, konektor, rain module, dan ESP32 perlu
+ini. HC-SR04 tidak tahan air; sensor, rain module, dan ESP32 perlu
 pelindung sesuai pemasangan. Pelat rain sensor tetap perlu terkena hujan.
 
 Uji pelat rain dalam keadaan kering dan dibasahi. Atur potensiometer modul sampai
@@ -182,41 +201,46 @@ potensiometer sedikit demi sedikit sampai keluaran DO membedakan pelat kering
 dan basah, lalu ulangi kedua kondisi. Setelah selesai diagnosis,
 `kRainDebugEnabled` boleh diubah ke `false` untuk menyembunyikan log tambahan.
 
-Backend nantinya menghitung `water_height_cm = sensor_to_zero_cm - distance_cm`.
+Backend menghitung `water_height_cm = sensor_to_zero_cm - distance_cm`.
 Ukur tinggi pemasangan terhadap titik nol lokasi dan simpan kalibrasinya di
 backend. Jangan menyalin contoh ambang demo sebagai ambang keselamatan lapangan.
 
-### Prototipe kontainer 20 cm dan tiang 30 cm di atas bibir
+### Prototipe HC-SR04: muka sensor 20 cm dari dasar
 
-Preview lokal sudah aktif melalui `kPrototypeSerialPreviewEnabled = true` di
-`NoBanjir/device_config.h`. Ukuran acuan adalah **muka probe ke dasar kontainer**,
-bukan ujung tiang. Nilai awalnya `kPrototypeSensorToZeroCm = 50.0`, tinggi
-kontainer `20.0`, dan ambang Waspada/Siaga/Bahaya `5.0/10.0/15.0` cm.
+Kalibrasi terbaru: `kPrototypeSensorToZeroCm = 20.0` dan
+`kPrototypeMaxWaterHeightCm = 18.0`. Tinggi air = 20 - jarak sensor.
+Batas air 18 cm menjaga jarak minimal sensor 2 cm; jangan isi sampai muka sensor.
 
-| Jarak probe ke air | Tinggi air dari dasar | Level preview |
+| Jarak sensor ke air | Tinggi air | Level preview |
 | --- | --- | --- |
-| 50 cm | 0 cm | NORMAL |
-| 45 cm | 5 cm | WASPADA |
-| 40 cm | 10 cm | SIAGA |
-| 35 cm | 15 cm | BAHAYA |
-| 30 cm | 20 cm | BAHAYA |
+| 20 cm | 0 cm | NORMAL |
+| 15 cm | 5 cm | WASPADA |
+| 10 cm | 10 cm | SIAGA |
+| 5 cm | 15 cm | BAHAYA |
+| 2 cm | 18 cm | BAHAYA |
 
-Setelah upload ulang, buka Serial Monitor **115200 baud**. Contoh saat jarak
-terukur 40 cm:
+Upload ulang lalu buka Serial Monitor 115200. Contoh:
 
 ```text
-[prototype] source=LOCAL_PREVIEW distance_cm=40.0 water_height_cm=10.0 level=SIAGA
+[prototype] source=LOCAL_PREVIEW distance_cm=10.0 water_height_cm=10.0 level=SIAGA
 ```
 
-Jika hasil ukur probe-ke-dasar sebenarnya 48 cm, ubah
-`kPrototypeSensorToZeroCm = 48.0`, lalu upload ulang. Jarak tidak valid atau hasil
-konversi di luar 0–20 cm ditandai `water_height_cm=null level=UNKNOWN`; periksa
-kalibrasi, pantulan dinding, dan posisi probe. Angka tidak dipaksa menjadi nol.
-`kMinDistanceCm` tetap 25 cm; pada susunan 50 cm ini air penuh masih berjarak
-30 cm dari probe.
+Jika kontainer kosong konsisten terbaca lebih dari 20 cm, ukur ulang muka sensor
+ke dasar dan sesuaikan kalibrasi firmware serta cloud dengan hasil sebenarnya.
+Pembacaan di luar kalibrasi tetap UNKNOWN; jangan memaksa nilainya menjadi nol.
 
-Tidak perlu `secrets.h` untuk preview ini. Jika nanti menghubungkannya ke web,
-gunakan preset [`device-config.prototype.json`](../../scripts/device-config.prototype.json)
+Tidak perlu `secrets.h` untuk preview lokal. Kalibrasi cloud perangkat yang sudah
+terdaftar diubah melalui `/admin/perangkat`; samakan dengan firmware:
+
+| Pengaturan cloud | Nilai |
+| --- | --- |
+| `sensor_to_zero_cm` | 20 |
+| `min_distance_cm` / `max_distance_cm` | 2 / 400 |
+| `max_water_height_cm` | 18 |
+| `waspada_min_cm` / `siaga_min_cm` / `bahaya_min_cm` | 5 / 10 / 15 |
+
+**Hanya untuk perangkat baru**, gunakan preset
+[`device-config.prototype.json`](../../scripts/device-config.prototype.json)
 setelah menyesuaikan hasil pengukuran sebenarnya. Dari root proyek:
 
 ```powershell
@@ -233,7 +257,7 @@ Komponen ini belum ada pada daftar Anda, sehingga **dinonaktifkan secara
 default** dan JSON berisi `float_switch_critical: null`.
 
 Untuk prototipe saat ini, biarkan `kFloatEnabled = false` dan GPIO26 tidak perlu
-disambungkan. Level air memakai hasil JSN-SR04T; ambang demo Bahaya dimulai pada
+disambungkan. Level air memakai hasil HC-SR04; ambang demo Bahaya dimulai pada
 tinggi air 15 cm. Rain sensor memberi informasi hujan secara terpisah. Nilai
 `float_switch_critical: null` berarti komponen tidak tersedia dan merupakan
 payload yang valid untuk backend.
@@ -250,9 +274,9 @@ Pembacaan tidak menunggu median. Upload dipercepat jika jaringan siap; ketika
 request sedang berjalan atau gagal, timeout/backoff tetap berlaku. Keputusan
 Bahaya harus tetap dilakukan server berdasarkan input kritis yang valid.
 
-## 5. Aktifkan HTTPS saat backend siap
+## 5. Hubungkan ke aplikasi Vercel
 
-1. Salin **`NoBanjir/secrets.example.h`** menjadi **`NoBanjir/secrets.h`**.
+1. Jika belum ada, salin **`NoBanjir/secrets.example.h`** menjadi **`NoBanjir/secrets.h`**.
    Ini file lokal yang dikecualikan oleh `.gitignore`. Jangan membagikannya.
 2. Buka `secrets.h` di Arduino IDE, lalu isi semua nilai ini:
 
@@ -276,6 +300,25 @@ Bahaya harus tetap dilakukan server berdasarkan input kritis yang valid.
    **Upload** ulang. Bila ada field kosong atau CA masih placeholder, firmware
    tetap di mode lokal dan tidak mengirim telemetri.
 
+Untuk deployment saat ini, isi `kIngestUrl` dengan
+`https://nobanjirtandaseru.vercel.app/api/iot/readings`. Setelah `secrets.h` ada,
+jalankan dari root proyek untuk mengisi CA yang sesuai:
+
+```powershell
+node firmware/esp32/tools/configure_vercel_ca.mjs
+```
+
+Script mengambil **GTS Root R1** dari trust store bawaan Node.js, mencocokkan
+fingerprint dengan repository resmi Google, dan hanya mengganti `kRootCa`.
+Script tidak mencetak password atau token. [Rantai WR1 menuju GTS Root R1](https://pki.goog/updates/march2025-alternate-chains.html)
+berbeda dari ISRG Root X1/X2 yang dipakai konfigurasi awal. Upload ulang setelah
+mengganti CA. Jika rantai domain berubah, periksa penerbit dan root-nya kembali.
+
+Di Vercel Production, backend memerlukan `NEXT_PUBLIC_SUPABASE_URL`,
+`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, dan `SUPABASE_SECRET_KEY`.
+Redeploy jika mengubah environment. Key Supabase tidak dimasukkan ke ESP32.
+Panduan lengkap: [ESP32 ke Vercel](../../docs/esp32-vercel-connection.md).
+
 Contoh bentuk file setelah diisi (nilai di bawah hanya penanda, bukan
 kredensial yang dapat dipakai):
 
@@ -285,7 +328,7 @@ constexpr bool kUploadEnabled = true;
 constexpr const char* kWifiSsid = "NAMA_WIFI_2_4_GHZ";
 constexpr const char* kWifiPassword = "KATA_SANDI_WIFI";
 constexpr const char* kDeviceCode = "ESP32-NB-001";
-constexpr const char* kIngestUrl = "https://app-sekolah.example/api/iot/readings";
+constexpr const char* kIngestUrl = "https://nobanjirtandaseru.vercel.app/api/iot/readings";
 constexpr const char* kDeviceToken = "TOKEN_HASIL_PROVISIONING";
 constexpr const char* kRootCa = R"PEM(
 -----BEGIN CERTIFICATE-----
@@ -301,7 +344,7 @@ token perangkat.** Endpoint server akan memeriksa token khusus yang terikat pada
 
 Wi-Fi harus bisa mengakses NTP dan HTTPS. Firmware menunggu jam UTC sebelum
 memulai HTTPS dan memverifikasi sertifikat. Tidak ada opsi `setInsecure()`.
-Timestamp disimpan dalam UTC; web nanti menampilkan WIB. Jika pembacaan dibuat
+Timestamp disimpan dalam UTC; web menampilkan WIB. Jika pembacaan dibuat
 sebelum sinkronisasi, timestamp perangkat dihilangkan dan server harus memakai
 `received_at`.
 
@@ -317,14 +360,14 @@ Contoh payload **ilustrasi**:
 ```json
 {
   "device_code": "ESP32-NB-001",
-  "distance_cm": 38.0,
+  "distance_cm": 10.0,
   "is_raining": false,
   "float_switch_critical": null,
   "measured_at": "2026-10-26T03:00:00Z"
 }
 ```
 
-Kontrak untuk implementasi backend berikutnya: terima `distance_cm: null` sebagai
+Backend menerima `distance_cm: null` sebagai
 error ultrasonic, bukan kondisi Normal; tetap proses rain/float yang valid.
 `is_raining` juga dapat `null` sebelum input stabil. `float_switch_critical: null`
 berarti tidak tersedia/belum diketahui. `measured_at` opsional. Server menghitung
@@ -337,7 +380,10 @@ timeout koneksi dan pembacaan HTTP masing-masing 4 detik, handshake TLS 5 detik.
 Operasi jaringan terdiri atas beberapa fase sehingga ini bukan batas total
 durasi satu request. Sensor terus dibaca selama fase tersebut.
 
-Respons 2xx menandakan pengiriman diterima di tingkat HTTP. Kegagalan upload
+Endpoint aplikasi mengembalikan `201` ketika pembacaan berhasil disimpan.
+Data invalid juga disimpan dengan alasan validasi; `201` tidak berarti sensor
+pasti valid. Dashboard menggunakan pembacaan terbaru, termasuk pembacaan invalid.
+Kegagalan upload
 memakai backoff sampai 60 detik; respons 429 dengan `Retry-After` numerik dapat
 menunda sampai 300 detik. Respons 401/403 menghentikan task jaringan sampai token
 atau pengaturan diperbaiki dan perangkat di-restart. Redirect tidak diikuti
@@ -362,7 +408,7 @@ kondisi aman.
 - [ ] Matikan daya, lepas jalur Echo, hidupkan lagi: `distance_cm` harus `null`.
 - [ ] Basahi/keringkan rain plate, atur potensiometer dan polaritas dengan benar.
 - [ ] Jika float dipasang, uji posisi kritis/nonkritis dan log observasi kritis.
-- [ ] Saat backend tersedia, uji token benar/salah dan CA benar/salah.
+- [ ] Pastikan `[https] result=201` muncul dan dashboard live ikut berubah.
 - [ ] Putuskan Wi-Fi: log sensor tetap berjalan, tidak ada status aman buatan.
 - [ ] Sambungkan lagi: kirim observasi terbaru; jangan mengirim backlog seolah baru.
 - [ ] Periksa casing, kelembapan, pantulan, catu daya, dan kestabilan pemasangan.
@@ -374,15 +420,37 @@ kondisi aman.
 | Port COM tidak muncul | Kabel data, konektor, driver USB-UART yang sesuai chip board |
 | Upload berhenti di Connecting | Board ESP32 Dev Module, port, tombol BOOT, speed 115200 |
 | Serial acak/tidak terbaca | Baud Serial Monitor 115200, tekan EN |
-| Jarak selalu null | GND, TRIG/ECHO, pembagi tegangan, mode modul, blind zone, arah probe |
+| Jarak selalu null | GND, TRIG/ECHO, pembagi tegangan, batas 2–400 cm, arah sensor; minimal tiga dari lima ping harus valid |
 | Hujan terbalik | `kRainActiveLow`, potensiometer, DO bukan AO |
 | Mode lokal setelah konfigurasi | Nama `secrets.h`, folder yang benar, flag enabled, token/CA/URL |
 | Wi-Fi tidak tersambung | Jaringan 2,4 GHz, kredensial, jangkauan, catu daya |
 | Waiting for UTC | Akses NTP dan DNS, captive portal/firewall |
 | Hasil HTTPS negatif | DNS, host HTTPS, root CA, koneksi internet, waktu perangkat |
+| `result=-1`, `tls_code=-9984` | Verifikasi sertifikat gagal. Untuk deployment WR1 saat ini, jalankan `configure_vercel_ca.mjs`, lalu upload ulang; jangan matikan TLS |
 | Hasil 400 | Validasi API dan dukungan field nullable; jangan mengganti error dengan nol |
 | Hasil 401/403 | Token terikat device_code, perangkat aktif, restart sesudah perbaikan |
 | Hasil 404 | URL endpoint backend belum benar atau endpoint belum dibuat |
+| Hasil 503 | Environment Supabase dan log backend di Vercel |
+| `201`, tetapi Sensor Bermasalah | Periksa `distance_cm`, kalibrasi dan alasan validasi; upload berhasil tetapi pengukuran terbaru invalid |
+| `HEIGHT_OUT_OF_RANGE` | Dengan sensor-ke-dasar 20 cm, jarak harus 2–20 cm agar tinggi air berada di rentang 0–18 cm |
+| `ULTRASONIC_UNAVAILABLE` | ESP32 mengirim jarak `null`; periksa arah pantulan, koneksi dan catu sensor |
+| `DISTANCE_OUT_OF_RANGE` | Samakan batas cloud dan firmware menjadi 2–400 cm untuk HC-SR04 |
+| `201`, dashboard belum berubah | Pilih perangkat yang benar, hapus `?demo=1`, tunggu sekitar 15–30 detik dan periksa waktu pembacaan |
+
+Contoh pengiriman yang berhasil pada kalibrasi saat ini:
+
+```text
+[wifi] connected
+[sensor] {"device_code":"ESP32-NB-001","distance_cm":10.0,"is_raining":false,"float_switch_critical":null}
+[prototype] source=LOCAL_PREVIEW distance_cm=10.0 water_height_cm=10.0 level=SIAGA
+[https] result=201
+```
+
+Jika koneksi gagal, kirim log `[https] transport_error=... tls_code=... tls_detail=...`
+untuk diagnosis. Jangan membagikan `secrets.h`. Pembacaan jarak 20,3 cm pada
+kalibrasi dasar 20 cm menghasilkan tinggi negatif dan tetap ditolak. Jika ini
+konsisten saat kosong, ukur ulang pemasangan dan sesuaikan kalibrasi dengan
+hasil sebenarnya, bukan menutupi error dengan tinggi nol.
 
 ## 8. Pemeriksaan kode untuk developer
 
@@ -416,17 +484,25 @@ PlatformIO dan akses unduhan toolchain; Anda dapat memakai Arduino IDE sepenuhny
 
 ## Referensi
 
-Status verifikasi kode pada 26 Oktober 2026: **21 static assertions lulus**;
-sketch/adapter dan firmware ELF berhasil dikompilasi serta di-link dengan SDK
-Arduino ESP32 **3.3.11**, baik mode lokal maupun konfigurasi jaringan dummy.
-Belum dilakukan Verify melalui UI Arduino IDE, upload board, pengujian sensor
-fisik, atau integrasi endpoint sebenarnya. Build opsional PlatformIO belum
-dijalankan karena unduhan paket dibatasi lingkungan.
+Status penyiapan sampai 29 Oktober 2026: sketch/adapter HC-SR04 berhasil
+dikompilasi dengan Arduino ESP32 **3.3.11**; firmware jaringan dengan GTS Root R1
+juga berhasil di-link. Pengguna sudah meng-upload melalui Arduino IDE dan
+mengonfirmasi HTTP **201**. Pemeriksaan database setelah kalibrasi 20 cm menerima
+jarak **20 cm**, tinggi air **0 cm**, `is_valid=true`, dan level **NORMAL**.
+Ini mengonfirmasi jalur ESP32 → Vercel → Supabase untuk prototipe, bukan
+pengujian ketahanan pemasangan lapangan. Rain sensor tetap perlu diuji kering
+dan basah. Build opsional PlatformIO belum dijalankan.
 
 - [Spesifikasi proyek](../../context/NO_BANJIR_WEB_APP_SPEC.md), bagian 8 dan 11.
 - [Instalasi Arduino ESP32 resmi](https://docs.espressif.com/projects/arduino-esp32/en/latest/installing.html).
 - [Datasheet ESP32-WROOM-32: batas listrik GPIO](https://documentation.espressif.com/esp32-wroom-32_datasheet_en.html).
 - [Profil PlatformIO ESP32 Dev Module](https://docs.platformio.org/en/stable/boards/espressif32/esp32dev.html).
 
-Datasheet varian JSN-SR04T, rain module, dan pinout vendor board Anda tetap perlu
+Datasheet varian HC-SR04, rain module, dan pinout vendor board Anda tetap perlu
 dicocokkan dengan marking komponen yang sebenarnya.
+
+Referensi HC-SR04: [datasheet](https://cdn.sparkfun.com/datasheets/Sensors/Proximity/HCSR04.pdf).
+
+Jika posisi sensor berubah, sesuaikan kalibrasi di `device_config.h` dan
+`/admin/perangkat`, lalu upload ulang firmware. Jangan provision ulang perangkat
+yang sama hanya untuk mengubah kalibrasi.

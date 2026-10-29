@@ -203,6 +203,13 @@ void networkTask(void*) {
     lastCriticalAttempt = snapshot.criticalSequence;
     const int status = http.POST(reinterpret_cast<uint8_t*>(payload.text), payload.length);
     const String retryAfter = http.header("Retry-After");
+    if (status < 0) {
+      char tlsError[160] = {};
+      const int tlsCode = client.lastError(tlsError, sizeof(tlsError));
+      Serial.printf("[https] transport_error=%s tls_code=%d tls_detail=%s wifi_rssi=%d free_heap=%lu\n",
+                    HTTPClient::errorToString(status).c_str(), tlsCode, tlsError,
+                    WiFi.RSSI(), static_cast<unsigned long>(ESP.getFreeHeap()));
+    }
     http.end();
     client.stop();
     // No response bodies, URLs, SSIDs, tokens or TLS secrets are logged.
@@ -240,6 +247,9 @@ void nobanjirDeviceSetup() {
   if (config::kFloatEnabled) pinMode(config::kFloatPin, INPUT_PULLUP);
   lastCycleMs = millis();
   Serial.println("NO BANJIR! / local sensor measurements / not a flood-level decision");
+  Serial.printf("[ultrasonic] HC-SR04 trig=%u echo=%u range_cm=%.1f..%.1f\n",
+                static_cast<unsigned>(config::kTrigPin), static_cast<unsigned>(config::kEchoPin),
+                config::kMinDistanceCm, config::kMaxDistanceCm);
   if (config::kRainDebugEnabled) {
     Serial.printf("[rain] connect module DO to GPIO%u; %s means wet after debounce\n",
                   static_cast<unsigned>(config::kRainPin), config::kRainActiveLow ? "LOW" : "HIGH");

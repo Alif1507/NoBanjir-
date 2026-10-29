@@ -3,8 +3,8 @@
 Aplikasi: `https://nobanjirtandaseru.vercel.app`
 
 Perangkat `ESP32-NB-001` sudah terdaftar dan aktif di proyek Supabase
-`cdjwcogjstcqaltfhhle`. Kalibrasi kontainer: sensor-ke-dasar 20 cm, tinggi air terpantau maksimum
-18 cm, ambang Waspada/Siaga/Bahaya 5/10/15 cm. Ini konfigurasi
+`cdjwcogjstcqaltfhhle`. Kalibrasi kontainer: sensor-ke-dasar 24 cm, tinggi air terpantau maksimum
+20 cm, ambang Waspada/Siaga/Bahaya 5/10/15 cm. Ini konfigurasi
 demonstrasi prototipe. Pengiriman fisik sudah dikonfirmasi dengan HTTP 201.
 
 File lokal `firmware/esp32/NoBanjir/secrets.h` sudah disiapkan dengan URL

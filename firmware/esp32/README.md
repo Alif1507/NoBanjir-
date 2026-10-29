@@ -13,9 +13,9 @@ tetap dihitung backend dari kalibrasi perangkat yang terdaftar.
 ## Konfigurasi prototipe saat ini
 
 - Sensor ultrasonik **HC-SR04**, menggantikan JSN-SR04T.
-- Muka sensor **20 cm dari dasar kontainer**; tinggi air terpantau **0–18 cm**.
+- Muka sensor **24 cm dari dasar kontainer**; tinggi air terpantau **0–20 cm**.
 - Ambang tinggi air: **Normal 0–<5**, **Waspada 5–<10**, **Siaga 10–<15**,
-  dan **Bahaya 15–18 cm**.
+  dan **Bahaya 15–20 cm**.
 - Rain sensor memakai **DO → GPIO27**; float switch tidak dipasang.
 - Perangkat cloud: `ESP32-NB-001`. Jangan provision ulang perangkat ini.
 - Endpoint: `https://nobanjirtandaseru.vercel.app/api/iot/readings`.
@@ -127,7 +127,7 @@ Contoh output **ilustrasi**, bukan pengukuran alat Anda:
 
 ```text
 [https] disabled or incomplete config; Serial-only bench mode
-[sensor] {"device_code":"ESP32-NB-001","distance_cm":10.0,"is_raining":false,"float_switch_critical":null}
+[sensor] {"device_code":"ESP32-NB-001","distance_cm":14.0,"is_raining":false,"float_switch_critical":null}
 ```
 
 `[sensor]` berarti pembacaan lokal, bukan bukti data diterima server. Tanpa jam
@@ -205,27 +205,27 @@ Backend menghitung `water_height_cm = sensor_to_zero_cm - distance_cm`.
 Ukur tinggi pemasangan terhadap titik nol lokasi dan simpan kalibrasinya di
 backend. Jangan menyalin contoh ambang demo sebagai ambang keselamatan lapangan.
 
-### Prototipe HC-SR04: muka sensor 20 cm dari dasar
+### Prototipe HC-SR04: muka sensor 24 cm dari dasar
 
-Kalibrasi terbaru: `kPrototypeSensorToZeroCm = 20.0` dan
-`kPrototypeMaxWaterHeightCm = 18.0`. Tinggi air = 20 - jarak sensor.
-Batas air 18 cm menjaga jarak minimal sensor 2 cm; jangan isi sampai muka sensor.
+Kalibrasi terbaru: `kPrototypeSensorToZeroCm = 24.0` dan
+`kPrototypeMaxWaterHeightCm = 20.0`. Tinggi air = 24 - jarak sensor.
+Saat kontainer penuh 20 cm, jarak air ke muka sensor masih 4 cm.
 
 | Jarak sensor ke air | Tinggi air | Level preview |
 | --- | --- | --- |
-| 20 cm | 0 cm | NORMAL |
-| 15 cm | 5 cm | WASPADA |
-| 10 cm | 10 cm | SIAGA |
-| 5 cm | 15 cm | BAHAYA |
-| 2 cm | 18 cm | BAHAYA |
+| 24 cm | 0 cm | NORMAL |
+| 19 cm | 5 cm | WASPADA |
+| 14 cm | 10 cm | SIAGA |
+| 9 cm | 15 cm | BAHAYA |
+| 4 cm | 20 cm | BAHAYA |
 
 Upload ulang lalu buka Serial Monitor 115200. Contoh:
 
 ```text
-[prototype] source=LOCAL_PREVIEW distance_cm=10.0 water_height_cm=10.0 level=SIAGA
+[prototype] source=LOCAL_PREVIEW distance_cm=14.0 water_height_cm=10.0 level=SIAGA
 ```
 
-Jika kontainer kosong konsisten terbaca lebih dari 20 cm, ukur ulang muka sensor
+Jika kontainer kosong konsisten terbaca lebih dari 24 cm, ukur ulang muka sensor
 ke dasar dan sesuaikan kalibrasi firmware serta cloud dengan hasil sebenarnya.
 Pembacaan di luar kalibrasi tetap UNKNOWN; jangan memaksa nilainya menjadi nol.
 
@@ -234,9 +234,9 @@ terdaftar diubah melalui `/admin/perangkat`; samakan dengan firmware:
 
 | Pengaturan cloud | Nilai |
 | --- | --- |
-| `sensor_to_zero_cm` | 20 |
+| `sensor_to_zero_cm` | 24 |
 | `min_distance_cm` / `max_distance_cm` | 2 / 400 |
-| `max_water_height_cm` | 18 |
+| `max_water_height_cm` | 20 |
 | `waspada_min_cm` / `siaga_min_cm` / `bahaya_min_cm` | 5 / 10 / 15 |
 
 **Hanya untuk perangkat baru**, gunakan preset
@@ -360,7 +360,7 @@ Contoh payload **ilustrasi**:
 ```json
 {
   "device_code": "ESP32-NB-001",
-  "distance_cm": 10.0,
+  "distance_cm": 14.0,
   "is_raining": false,
   "float_switch_critical": null,
   "measured_at": "2026-10-26T03:00:00Z"
@@ -432,7 +432,7 @@ kondisi aman.
 | Hasil 404 | URL endpoint backend belum benar atau endpoint belum dibuat |
 | Hasil 503 | Environment Supabase dan log backend di Vercel |
 | `201`, tetapi Sensor Bermasalah | Periksa `distance_cm`, kalibrasi dan alasan validasi; upload berhasil tetapi pengukuran terbaru invalid |
-| `HEIGHT_OUT_OF_RANGE` | Dengan sensor-ke-dasar 20 cm, jarak harus 2–20 cm agar tinggi air berada di rentang 0–18 cm |
+| `HEIGHT_OUT_OF_RANGE` | Dengan sensor-ke-dasar 24 cm, jarak harus 4–24 cm agar tinggi air berada di rentang 0–20 cm |
 | `ULTRASONIC_UNAVAILABLE` | ESP32 mengirim jarak `null`; periksa arah pantulan, koneksi dan catu sensor |
 | `DISTANCE_OUT_OF_RANGE` | Samakan batas cloud dan firmware menjadi 2–400 cm untuk HC-SR04 |
 | `201`, dashboard belum berubah | Pilih perangkat yang benar, hapus `?demo=1`, tunggu sekitar 15–30 detik dan periksa waktu pembacaan |
@@ -441,14 +441,14 @@ Contoh pengiriman yang berhasil pada kalibrasi saat ini:
 
 ```text
 [wifi] connected
-[sensor] {"device_code":"ESP32-NB-001","distance_cm":10.0,"is_raining":false,"float_switch_critical":null}
-[prototype] source=LOCAL_PREVIEW distance_cm=10.0 water_height_cm=10.0 level=SIAGA
+[sensor] {"device_code":"ESP32-NB-001","distance_cm":14.0,"is_raining":false,"float_switch_critical":null}
+[prototype] source=LOCAL_PREVIEW distance_cm=14.0 water_height_cm=10.0 level=SIAGA
 [https] result=201
 ```
 
 Jika koneksi gagal, kirim log `[https] transport_error=... tls_code=... tls_detail=...`
-untuk diagnosis. Jangan membagikan `secrets.h`. Pembacaan jarak 20,3 cm pada
-kalibrasi dasar 20 cm menghasilkan tinggi negatif dan tetap ditolak. Jika ini
+untuk diagnosis. Jangan membagikan `secrets.h`. Pembacaan jarak 24,3 cm pada
+kalibrasi dasar 24 cm menghasilkan tinggi negatif dan tetap ditolak. Jika ini
 konsisten saat kosong, ukur ulang pemasangan dan sesuaikan kalibrasi dengan
 hasil sebenarnya, bukan menutupi error dengan tinggi nol.
 
@@ -506,3 +506,6 @@ Referensi HC-SR04: [datasheet](https://cdn.sparkfun.com/datasheets/Sensors/Proxi
 Jika posisi sensor berubah, sesuaikan kalibrasi di `device_config.h` dan
 `/admin/perangkat`, lalu upload ulang firmware. Jangan provision ulang perangkat
 yang sama hanya untuk mengubah kalibrasi.
+
+Kalibrasi pemasangan terbaru: sensor-ke-dasar 24 cm dan tinggi kontainer 20 cm.
+Catatan verifikasi kalibrasi 20 cm di atas adalah riwayat pengujian sebelumnya.

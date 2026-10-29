@@ -16,11 +16,11 @@ constexpr bool kFloatActiveLow = true;
 constexpr double kMinDistanceCm = 2.0;
 constexpr double kMaxDistanceCm = 400.0;
 
-// Demonstration: probe face 20 cm above the bottom; keep 2 cm clear of water.
+// Demonstration: probe face 24 cm above the bottom; full container leaves 4 cm clear.
 // Measure the actual probe-to-bottom distance and adjust kPrototypeSensorToZeroCm.
 constexpr bool kPrototypeSerialPreviewEnabled = true;
-constexpr double kPrototypeSensorToZeroCm = 20.0;
-constexpr double kPrototypeMaxWaterHeightCm = 18.0;
+constexpr double kPrototypeSensorToZeroCm = 24.0;
+constexpr double kPrototypeMaxWaterHeightCm = 20.0;
 constexpr double kPrototypeWaspadaMinCm = 5.0;
 constexpr double kPrototypeSiagaMinCm = 10.0;
 constexpr double kPrototypeBahayaMinCm = 15.0;

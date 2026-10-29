@@ -6,3 +6,9 @@ node_modules/
 *.tsbuildinfo
 provisioned-devices/
 coverage/
+
+# Local project context and design references
+/.agents/
+/docs/
+/context/
+/design-assets/

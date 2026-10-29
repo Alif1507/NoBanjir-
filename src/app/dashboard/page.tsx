@@ -257,7 +257,14 @@ export default function DashboardPage() {
           <div className="condition-cards">
             <article className="height-card">
               <div className="card-heading">
-                <span className="gray-disc" aria-hidden="true" />
+                <Image
+                  src="/ketinggian%20air/icon_ketinggian_air.png"
+                  alt=""
+                  width={96}
+                  height={96}
+                  className="water-height-icon"
+                  unoptimized
+                />
                 <h2>Ketinggian Air</h2>
               </div>
               <p className="height-number" aria-live="polite">
